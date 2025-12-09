@@ -1,0 +1,22 @@
+# Django & REST Framework
+Django==4.2.0
+djangorestframework==3.14.0
+django-cors-headers==4.2.0
+
+# Async processing
+celery==5.3.0
+redis==5.0.1
+django-celery-results==2.5.1
+
+# PDF Processing
+PyMuPDF==1.23.8
+pytesseract==0.3.10
+Pillow==10.0.1
+
+# Database
+psycopg2-binary==2.9.7
+
+# Utilities
+python-dotenv==1.0.0
+python-magic==0.4.27
+drf-yasg==1.21.7
