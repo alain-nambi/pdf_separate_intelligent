@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "PDF Processor API - Simple",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload PDF for Processing",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8001/process",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "process"
+          ]
+        },
+        "description": "Upload a PDF file to be split into pages and renamed via OCR. Returns a task_id."
+      }
+    },
+    {
+      "name": "Check Task Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/task/{{task_id}}",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "task",
+            "{{task_id}}"
+          ]
+        },
+        "description": "Check the status of a processing task. Replace {{task_id}} with the actual task ID from the upload response."
+      }
+    },
+    {
+      "name": "Download Processed ZIP",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/download/{{task_id}}",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "download",
+            "{{task_id}}"
+          ]
+        },
+        "description": "Download the ZIP file containing all processed PDFs when the task is complete. Replace {{task_id}} with the actual task ID."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "description": "Simple Postman collection to test the PDF Processor API.\n\n1. Upload PDF file to /process endpoint\n2. Check status by polling /task/{id} until completed\n3. Download ZIP from /download/{id}\n\nBase URL: http://localhost:8001"
+}

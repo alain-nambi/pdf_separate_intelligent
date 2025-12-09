@@ -1,0 +1,13 @@
+venv
+__pycache__
+output/
+*.pyc
+.DS_Store
+.idea/
+.vscode/
+.env
+*.log
+coverage/
+.mypy_cache/
+.pytest_cache/
+uploads/
