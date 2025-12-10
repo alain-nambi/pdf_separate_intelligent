@@ -4,12 +4,12 @@ import tempfile
 import os
 from .tasks import process_pdf_task
 
-app = FastAPI(title="PDF Processor API")
+app = FastAPI(title="Pay Slip OCR Processor API")
 
 @app.post("/process")
 async def process_pdf(file: UploadFile = File(...)):
     """
-    Upload a PDF file to process: split pages and rename via OCR
+    Upload a pay slip PDF file to process: split pages and rename based on employee info and period using OCR
     """
     if not file.filename.lower().endswith('.pdf'):
         return {"error": "Only PDF files are allowed"}
@@ -50,7 +50,9 @@ async def get_task_status(task_id: str):
         response = {
             'task_id': task_id,
             'status': 'Completed',
-            'file_count': task.info['file_count']
+            'output_dir': task.info['output_dir'],
+            'file_count': task.info['file_count'],
+            'employee_count': task.info.get('employee_count', 0)
         }
     else:  # FAILURE
         response = {
@@ -62,17 +64,34 @@ async def get_task_status(task_id: str):
     return response
 
 @app.get("/download/{task_id}")
-async def download_zip(task_id: str):
+async def download_results(task_id: str):
     """
-    Download the processed ZIP file for a completed task
+    Get the processed pay slips organized by employee ID as folder structure
     """
     task = process_pdf_task.AsyncResult(task_id)
 
     if task.state != 'SUCCESS':
         return {"error": "Task is not completed or failed"}
 
-    zip_path = task.info['zip_path']
-    if os.path.exists(zip_path):
-        return FileResponse(zip_path, media_type='application/zip', filename='processed_pdfs.zip')
-    else:
-        return {"error": "ZIP file not found"}
+    output_dir = task.info['output_dir']
+    if not os.path.exists(output_dir):
+        return {"error": "Processed files not found"}
+
+    # Get the folder structure
+    import glob
+    structure = {}
+    for employee_dir in os.listdir(output_dir):
+        employee_path = os.path.join(output_dir, employee_dir)
+        if os.path.isdir(employee_path):
+            files = []
+            for pdf_file in glob.glob(os.path.join(employee_path, "*.pdf")):
+                files.append(os.path.basename(pdf_file))
+            structure[employee_dir] = files
+
+    return {
+        "task_id": task_id,
+        "output_dir": output_dir,
+        "folder_structure": structure,
+        "total_folders": len(structure),
+        "total_files": sum(len(files) for files in structure.values())
+    }
