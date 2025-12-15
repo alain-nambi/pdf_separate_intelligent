@@ -1,10 +1,24 @@
-from fastapi import FastAPI, File, UploadFile
+﻿from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import tempfile
 import os
 from .tasks import process_pdf_task
 
 app = FastAPI(title="Pay Slip OCR Processor API")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files for output
+app.mount("/media", StaticFiles(directory="output"), name="media")
 
 @app.post("/process")
 async def process_pdf(file: UploadFile = File(...)):
@@ -43,8 +57,11 @@ async def get_task_status(task_id: str):
     elif task.state == 'PROGRESS':
         response = {
             'task_id': task_id,
-            'status': 'In Progress',
-            'progress': task.info.get('progress', '')
+            'status': 'Traitement en cours…',
+            'detail': task.info.get('detail', ''),
+            'progress': task.info.get('progress', ''),
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 0)
         }
     elif task.state == 'SUCCESS':
         response = {

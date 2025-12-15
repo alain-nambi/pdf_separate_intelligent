@@ -43,10 +43,6 @@ def process_pdf_task(self, input_pdf_path: str):
         employee_folders = {}
 
         for idx, page_file in enumerate(page_files):
-            self.update_state(state='PROGRESS', meta={
-                'progress': f'Processing pay slip {idx+1}/{total_pages}'
-            })
-
             # Extract text and employee info - always use OCR for pay slips
             employee_info = None
             period_info = None
@@ -124,6 +120,14 @@ def process_pdf_task(self, input_pdf_path: str):
                 base, ext = os.path.splitext(original_path)
                 final_path = os.path.join(employee_dir, f"{base}_{counter}{ext}")
                 counter += 1
+
+            # Update progress with current filename
+            self.update_state(state='PROGRESS', meta={
+                'detail': f'Traitement pour {nom} {prenom} ({matricule})',
+                'progress': f'Fiche en cours : {final_filename} ({idx + 1} / {total_pages})',
+                'current': idx + 1,
+                'total': total_pages
+            })
 
             shutil.move(page_file, final_path)
             processed_files.append(final_path)
