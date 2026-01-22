@@ -112,3 +112,15 @@ async def download_results(task_id: str):
         "total_folders": len(structure),
         "total_files": sum(len(files) for files in structure.values())
     }
+
+@app.get("/folders")
+async def get_folders():
+    """
+    Get the list of folder paths in the output directory
+    """
+    output_dir = "output"
+    if not os.path.exists(output_dir):
+        return {"folders": []}
+
+    folders = [os.path.join(output_dir, d) for d in os.listdir(output_dir) if os.path.isdir(os.path.join(output_dir, d))]
+    return {"folders": folders}
