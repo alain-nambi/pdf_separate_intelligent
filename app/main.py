@@ -31,7 +31,11 @@ async def process_pdf(file: UploadFile = File(...)):
     # Save uploaded file to uploads folder
     import uuid
     file_id = str(uuid.uuid4())
-    input_pdf_path = f"uploads/{file_id}.pdf"
+    input_pdf_path = f"uploads/{file.filename}.pdf"
+
+
+    print(f"DEBUG: Received file {file.filename}, saving to {input_pdf_path}")
+    
     os.makedirs("uploads", exist_ok=True)
     with open(input_pdf_path, "wb") as f:
         content = await file.read()

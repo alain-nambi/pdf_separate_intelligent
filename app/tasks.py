@@ -28,6 +28,11 @@ def process_pdf_task(self, input_pdf_path: str):
         pages_dir = os.path.join(task_temp_dir, 'pages')
         final_dir = os.path.join(task_temp_dir, 'final')
 
+
+        # Debug info
+        print(f"DEBUG: Starting input_pdf_path: {input_pdf_path}")
+
+
         os.makedirs(pages_dir, exist_ok=True)
         os.makedirs(final_dir, exist_ok=True)
 
@@ -134,7 +139,7 @@ def process_pdf_task(self, input_pdf_path: str):
 
         # Step 3: Move organized structure to output
         self.update_state(state='PROGRESS', meta={'progress': 'Organizing files by employee'})
-        output_dir = os.path.join("output", f'processed_payslips_{task_id}')
+        output_dir = os.path.join("output", f'{input_pdf_path}'.replace('/', '_').replace('\\', '_').replace('.pdf', '').replace('uploads_', ''))
         shutil.move(final_dir, output_dir)
 
         # Clean up input
