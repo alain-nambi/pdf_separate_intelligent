@@ -126,7 +126,7 @@ async def get_folders():
     if not os.path.exists(output_dir):
         return {"folders": []}
 
-    host_base = "C:\\Projet\\projet\\pdf_separate_intelligent"
+    host_base = "C:/Projet/projet/pdf_separate_intelligent"
     folders = [os.path.join(host_base, "output", d) for d in os.listdir(output_dir) if os.path.isdir(os.path.join(output_dir, d))]
     return {"folders": folders}
 
