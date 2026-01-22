@@ -122,5 +122,24 @@ async def get_folders():
     if not os.path.exists(output_dir):
         return {"folders": []}
 
-    folders = [os.path.join(output_dir, d) for d in os.listdir(output_dir) if os.path.isdir(os.path.join(output_dir, d))]
+    host_base = "C:\\Projet\\projet\\pdf_separate_intelligent"
+    folders = [os.path.join(host_base, "output", d) for d in os.listdir(output_dir) if os.path.isdir(os.path.join(output_dir, d))]
     return {"folders": folders}
+
+@app.get("/list_files/{folder_name}")
+async def list_files_in_folder(folder_name: str):
+    """
+    Get the list of PDF files in a specific folder recursively
+    """
+    folder_path = os.path.join("output", folder_name)
+    if not os.path.exists(folder_path):
+        return {"files": []}
+
+    pdf_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.lower().endswith('.pdf'):
+                # Get relative path from folder_path
+                rel_path = os.path.relpath(os.path.join(root, file), folder_path)
+                pdf_files.append(rel_path)
+    return {"files": pdf_files}
