@@ -9,8 +9,8 @@ from .utils import split_pdf_one_page_per_file, process_single_page_pdf, extract
 
 app = Celery(
     'pdf_processor',
-    broker='redis://redis:6379/0',
-    backend='redis://redis:6379/0',
+    broker='redis://redis:6379/1',
+    backend='redis://redis:6379/1',
     broker_connection_retry_on_startup=True
 )
 
