@@ -139,7 +139,7 @@ def process_pdf_task(self, input_pdf_path: str):
 
         # Step 3: Move organized structure to output
         self.update_state(state='PROGRESS', meta={'progress': 'Organizing files by employee'})
-        output_dir = os.path.join("output", f'{input_pdf_path}'.replace('/', '_').replace('\\', '_').replace('.pdf', '').replace('uploads_', ''))
+        output_dir = os.path.join("output", f'{input_pdf_path}_{task_id}'.replace('/', '_').replace('\\', '_').replace('.pdf', '').replace('uploads_', ''))
         shutil.move(final_dir, output_dir)
 
         # Clean up input
