@@ -1,10 +1,11 @@
-﻿from fastapi import FastAPI, File, UploadFile
+﻿from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import tempfile
 import os
 from .tasks import process_pdf_task
+from .crypto import encrypt_file, decrypt_to_memory
 
 app = FastAPI(title="Pay Slip OCR Processor API")
 
@@ -35,11 +36,17 @@ async def process_pdf(file: UploadFile = File(...)):
 
 
     print(f"DEBUG: Received file {file.filename}, saving to {input_pdf_path}")
-    
+
     os.makedirs("uploads", exist_ok=True)
-    with open(input_pdf_path, "wb") as f:
+    # Save to temp first, then encrypt
+    temp_path = f"{input_pdf_path}.temp"
+    with open(temp_path, "wb") as f:
         content = await file.read()
         f.write(content)
+
+    # Encrypt the file
+    encrypt_file(temp_path, input_pdf_path)
+    os.remove(temp_path)
 
     # Start async task
     task = process_pdf_task.delay(input_pdf_path)
@@ -105,8 +112,10 @@ async def download_results(task_id: str):
         employee_path = os.path.join(output_dir, employee_dir)
         if os.path.isdir(employee_path):
             files = []
-            for pdf_file in glob.glob(os.path.join(employee_path, "*.pdf")):
-                files.append(os.path.basename(pdf_file))
+            for enc_file in glob.glob(os.path.join(employee_path, "*.enc")):
+                # Convert .enc back to .pdf for the API response
+                pdf_filename = os.path.splitext(os.path.basename(enc_file))[0] + '.pdf'
+                files.append(pdf_filename)
             structure[employee_dir] = files
 
     return {
@@ -142,8 +151,42 @@ async def list_files_in_folder(folder_name: str):
     pdf_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.lower().endswith('.pdf'):
+            if file.lower().endswith('.enc'):
+                # Convert .enc back to .pdf for the API response
+                pdf_filename = os.path.splitext(file)[0] + '.pdf'
                 # Get relative path from folder_path
-                rel_path = os.path.relpath(os.path.join(root, file), folder_path)
+                rel_path = os.path.relpath(os.path.join(root, pdf_filename), folder_path)
                 pdf_files.append(rel_path)
     return {"files": pdf_files}
+
+@app.get("/secure_file/{folder_name}/{file_name}")
+async def get_secure_file(folder_name: str, file_name: str):
+    """
+    Serve an encrypted PDF file by decrypting it on the fly
+    TODO: Add authentication to ensure only logged-in users can access
+    """
+    # Convert .pdf extension to .enc for the actual file path
+    if file_name.lower().endswith('.pdf'):
+        encrypted_filename = os.path.splitext(file_name)[0] + '.enc'
+    else:
+        encrypted_filename = file_name
+
+    file_path = os.path.join("output", folder_name, encrypted_filename)
+    if not os.path.exists(file_path) or not encrypted_filename.lower().endswith('.enc'):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        # Decrypt to memory
+        decrypted_data = decrypt_to_memory(file_path)
+
+        # Return as file response with original filename
+        from fastapi.responses import StreamingResponse
+        import io
+
+        return StreamingResponse(
+            io.BytesIO(decrypted_data),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"inline; filename={file_name}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error decrypting file: {str(e)}")

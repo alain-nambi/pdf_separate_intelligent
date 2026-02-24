@@ -6,6 +6,7 @@ import fitz
 from PIL import Image
 import io
 from .utils import split_pdf_one_page_per_file, process_single_page_pdf, extract_employee_info, extract_text_with_fallback, generate_pay_slip_filename, extract_period_from_dates
+from .crypto import decrypt_file, encrypt_file
 
 app = Celery(
     'pdf_processor',
@@ -32,13 +33,16 @@ def process_pdf_task(self, input_pdf_path: str):
         # Debug info
         print(f"DEBUG: Starting input_pdf_path: {input_pdf_path}")
 
-
         os.makedirs(pages_dir, exist_ok=True)
         os.makedirs(final_dir, exist_ok=True)
 
+        # Decrypt input file to temp
+        decrypted_input = os.path.join(task_temp_dir, 'decrypted_input.pdf')
+        decrypt_file(input_pdf_path, decrypted_input)
+
         # Step 1: Split PDF
         self.update_state(state='PROGRESS', meta={'progress': 'Splitting PDF'})
-        page_files = split_pdf_one_page_per_file(input_pdf_path, pages_dir)
+        page_files = split_pdf_one_page_per_file(decrypted_input, pages_dir)
 
         # Step 2: Process each page with pay slip OCR and organize by employee
         processed_files = []
@@ -136,6 +140,16 @@ def process_pdf_task(self, input_pdf_path: str):
 
             shutil.move(page_file, final_path)
             processed_files.append(final_path)
+
+        # Encrypt all PDF files in final_dir and change extension to .enc
+        self.update_state(state='PROGRESS', meta={'progress': 'Encrypting output files'})
+        for root, dirs, files in os.walk(final_dir):
+            for file in files:
+                if file.lower().endswith('.pdf'):
+                    file_path = os.path.join(root, file)
+                    encrypted_path = os.path.splitext(file_path)[0] + '.enc'
+                    encrypt_file(file_path, encrypted_path)
+                    os.remove(file_path)  # Delete original PDF after encryption
 
         # Step 3: Move organized structure to output
         self.update_state(state='PROGRESS', meta={'progress': 'Organizing files by employee'})

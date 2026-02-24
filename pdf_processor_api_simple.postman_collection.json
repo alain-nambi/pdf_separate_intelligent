@@ -29,7 +29,7 @@
             "process"
           ]
         },
-        "description": "Upload a PDF file to be split into pages and renamed via OCR. Returns a task_id."
+        "description": "Upload a PDF file to be split into pages and renamed via OCR. The file will be encrypted during processing. Returns a task_id."
       }
     },
     {
@@ -52,7 +52,7 @@
       }
     },
     {
-      "name": "Download Processed ZIP",
+      "name": "Download Processed Files",
       "request": {
         "method": "GET",
         "header": [],
@@ -67,7 +67,64 @@
             "{{task_id}}"
           ]
         },
-        "description": "Download the ZIP file containing all processed PDFs when the task is complete. Replace {{task_id}} with the actual task ID."
+        "description": "Get the processed pay slips organized by employee ID as folder structure. Files are encrypted (.enc) and can be accessed via /secure_file endpoint."
+      }
+    },
+    {
+      "name": "Get Folders List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/folders",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "folders"
+          ]
+        },
+        "description": "Get the list of folder paths in the output directory organized by employee ID."
+      }
+    },
+    {
+      "name": "List Files in Folder",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/list_files/{{folder_name}}",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "list_files",
+            "{{folder_name}}"
+          ]
+        },
+        "description": "Get the list of encrypted PDF files (.enc) in a specific employee folder recursively. Replace {{folder_name}} with the employee ID."
+      }
+    },
+    {
+      "name": "Get Secure File",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/secure_file/{{folder_name}}/{{file_name}}",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "secure_file",
+            "{{folder_name}}",
+            "{{file_name}}"
+          ]
+        },
+        "description": "Serve an encrypted PDF file by decrypting it on the fly. Replace {{folder_name}} with employee ID and {{file_name}} with the encrypted filename (.enc). The file will be decrypted and served as PDF."
       }
     }
   ],
@@ -78,5 +135,5 @@
       "type": "string"
     }
   ],
-  "description": "Simple Postman collection to test the PDF Processor API.\n\n1. Upload PDF file to /process endpoint\n2. Check status by polling /task/{id} until completed\n3. Download ZIP from /download/{id}\n\nBase URL: http://localhost:8001"
+  "description": "Postman collection to test the PDF Processor API with cryptography integration.\n\nWorkflow:\n1. Upload PDF file to /process endpoint (file will be encrypted during processing)\n2. Check status by polling /task/{id} until completed\n3. Get folder structure via /folders or /download/{id}\n4. List files in specific employee folder via /list_files/{folder_name}\n5. Access encrypted files via /secure_file/{folder_name}/{file_name} (decrypted on-the-fly)\n\nBase URL: http://localhost:8001\n\nNote: All processed files are encrypted (.enc extension) and can only be accessed through the secure_file endpoint."
 }
